@@ -22,29 +22,32 @@
     <Filter Include="src\Process Management">
       <UniqueIdentifier>{9bfeea21-ddd5-497d-929b-4e6b5a7c02e6}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\include">
+      <UniqueIdentifier>{089afb7a-923a-4d7b-a0a4-6c1de25c4b03}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="framework.h">
+    <ClInclude Include="src\Header Files\framework.h">
       <Filter>src\Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="pch.h">
+    <ClInclude Include="src\Header Files\pch.h">
       <Filter>src\Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="utils.h">
+    <ClInclude Include="src\Header Files\utils.h">
       <Filter>src\utils</Filter>
     </ClInclude>
-    <ClInclude Include="process_management.h">
+    <ClInclude Include="src\process_management\process_management.h">
       <Filter>src\Process Management</Filter>
+    </ClInclude>
+    <ClInclude Include="src\include\include.h">
+      <Filter>src\include</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="ProcessManagement.cpp">
+    <ClCompile Include="src\Source Files\pch.cpp">
       <Filter>src\Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="pch.cpp">
-      <Filter>src\Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="process_management.cpp">
+    <ClCompile Include="src\process_management\process_management.cpp">
       <Filter>src\Process Management</Filter>
     </ClCompile>
   </ItemGroup>
