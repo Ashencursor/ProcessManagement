@@ -33,14 +33,14 @@
     <ClInclude Include="src\Header Files\pch.h">
       <Filter>src\Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Header Files\utils.h">
-      <Filter>src\utils</Filter>
-    </ClInclude>
     <ClInclude Include="src\process_management\process_management.h">
       <Filter>src\Process Management</Filter>
     </ClInclude>
     <ClInclude Include="src\include\include.h">
       <Filter>src\include</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Header Files\utils.h">
+      <Filter>src\Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -49,6 +49,9 @@
     </ClCompile>
     <ClCompile Include="src\process_management\process_management.cpp">
       <Filter>src\Process Management</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Header Files\utils.cpp">
+      <Filter>src\Source Files</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

@@ -1,8 +1,8 @@
 #include "../Header Files/pch.h"
 #include "process_management.h"
 #include <Tlhelp32.h>
-
-
+#include <vector>
+#include "../Header Files/utils.h"
 
 bool Process::initialize(const wchar_t* proc_name)
 {
@@ -20,7 +20,7 @@ bool Process::initialize(const wchar_t* proc_name)
 	return true;
 }
 
-std::uint32_t Process::getID(std::wstring str)
+std::uint32_t Process::getID(const std::wstring str)
 {
 	PROCESSENTRY32 ProcessInfoPE;
 	ProcessInfoPE.dwSize = sizeof(PROCESSENTRY32);
@@ -37,7 +37,7 @@ std::uint32_t Process::getID(std::wstring str)
 	return 0;
 }
 
-void* Process::getHandle(std::uint32_t id)
+void* Process::getHandle(const std::uint32_t id)
 {
 	if (this->handle) {
 		CloseHandle(this->handle);
@@ -51,17 +51,93 @@ void* Process::getHandle(std::uint32_t id)
 	return this->handle;
 }
 
-void* Process::getModuleHandle()
+uintptr_t Process::getModuleAddress(const char* dll_name)
 {
-	return nullptr;
+	uintptr_t moduleBaseAddress = 0;
+	HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, this->ID);
+
+	if (snapshot != INVALID_HANDLE_VALUE) {
+		MODULEENTRY32 moduleEntry;
+		moduleEntry.dwSize = sizeof(MODULEENTRY32);
+
+		if (Module32First(snapshot, &moduleEntry)) {
+			do {
+				if (utils::toLower(utils::wideToNarrow(moduleEntry.szModule)) == utils::toLower(dll_name)) {// wcscmp(moduleEntry.szModule, dll_name) or moduleEntry.szModule == dll_name
+					return reinterpret_cast<uintptr_t>(moduleEntry.modBaseAddr);
+				}
+			} while (Module32Next(snapshot, &moduleEntry));
+		}
+
+		CloseHandle(snapshot);
+	}
+
+	// Module not found, so load it into the remote process
+	moduleBaseAddress = LoadRemoteLibrary(dll_name);
+	// Verify if LoadRemoteLibrary succeeded in loading the module
+	if (moduleBaseAddress == 0) {
+		//std::cout << "Failed to load module: " << dll_name << " in the target process.\n";
+	}
+	return moduleBaseAddress;
 }
 
-uintptr_t Process::getModuleAddress()
+uintptr_t Process::getModuleFuncAddress(const char* dll_name, const char* function_name)
 {
-	return uintptr_t();
+	// Get remote module address
+	uintptr_t remoteModuleAddress{ getModuleAddress(dll_name) };
+	if (remoteModuleAddress == 0) {
+		std::cerr << "[-] Module not found in the target process: " << dll_name << std::endl;
+		return 0;
+	}
+	// Get the local module handle
+	HMODULE localModuleAddress{ GetModuleHandleA(dll_name) };
+	if (localModuleAddress == nullptr) {
+		localModuleAddress = LoadLibraryA(dll_name);
+		if (localModuleAddress == nullptr) {
+			std::cerr << "[-] Failed to load library: " << dll_name << std::endl;
+			return 0;
+		}
+	}
+	// Get the address of the function in the local module
+	FARPROC  localModuleFunctionAddress{ GetProcAddress(localModuleAddress, function_name) };
+	if (localModuleFunctionAddress == nullptr) {
+		std::cerr << "[-] Failed to get function address: " << function_name << std::endl;
+		return 0;
+	}
+	// Calculate the function offset
+	uintptr_t functionOffset = reinterpret_cast<uintptr_t>(localModuleFunctionAddress) - reinterpret_cast<uintptr_t>(localModuleAddress);
+
+	// Return the remote function address
+	return remoteModuleAddress + functionOffset;
 }
 
-uintptr_t Process::getModuleFuncAddress()
+// This is kinda weird because loading a library into the target process in this function below uses create remote thread
+// and the remoteLoadLibraryA so it does what my manual mapper is avoiding(using loadLibrary). It doesnt totaly matter for 
+// the simple games I'm making cheats for now but it will when I get to ac. Just something to worry and think about.
+uintptr_t Process::LoadRemoteLibrary(const char* module_name)
 {
-	return uintptr_t();
+	void* remoteMemory = VirtualAllocEx(handle, nullptr, strlen(module_name) + 1, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+	if (!remoteMemory) {
+		return 0;  // Allocation failed
+	}
+
+	if (!WriteProcessMemory(handle, remoteMemory, module_name, strlen(module_name) + 1, nullptr)) {
+		VirtualFreeEx(handle, remoteMemory, 0, MEM_RELEASE);
+		return 0;  // Writing failed
+	}
+
+	HANDLE hThread = CreateRemoteThread(handle, nullptr, 0, reinterpret_cast<LPTHREAD_START_ROUTINE>(remoteLoadLibraryA), remoteMemory, 0, nullptr);
+	if (!hThread) {
+		VirtualFreeEx(handle, remoteMemory, 0, MEM_RELEASE);
+		return 0;  // Failed to create thread
+	}
+
+	WaitForSingleObject(hThread, INFINITE);
+
+	uintptr_t hModule = 0;
+	GetExitCodeThread(hThread, (LPDWORD)&hModule);
+
+	VirtualFreeEx(handle, remoteMemory, 0, MEM_RELEASE);
+	CloseHandle(hThread);
+
+	return hModule;
 }

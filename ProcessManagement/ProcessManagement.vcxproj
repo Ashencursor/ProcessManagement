@@ -148,12 +148,13 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="src\Header Files\framework.h" />
+    <ClInclude Include="src\Header Files\utils.h" />
     <ClInclude Include="src\include\include.h" />
     <ClInclude Include="src\Header Files\pch.h" />
     <ClInclude Include="src\process_management\process_management.h" />
-    <ClInclude Include="src\Header Files\utils.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\Header Files\utils.cpp" />
     <ClCompile Include="src\Source Files\pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
