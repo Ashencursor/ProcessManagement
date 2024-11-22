@@ -10,11 +10,11 @@ bool Process::initialize(const std::string& proc_name)
 	this->handle = getHandle(this->ID);
 
 	if (!this->ID) {
-		std::cout << "invalid ID\n";
+		std::cerr << "[-] invalid ID\n";
 		return false;
 	}
 	if (!this->handle) {
-		std::cout << "invalid handle\n";
+		std::cerr << "[-] invalid handle\n";
 		return false;
 	}
 	return true;

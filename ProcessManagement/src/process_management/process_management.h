@@ -7,8 +7,8 @@ class Process
 private:
 	std::uint32_t		ID{};
 	void*				handle{};
-	std::string			name{};// wstring so name can be stored as a wstring and used from getID. If needed to convert ill make a converter or use some windows conversion
-	// Extra 
+	std::string			name{};
+	// Extra
 	uintptr_t			remoteGetProcAddr = 0;
 	uintptr_t			remoteLoadLibraryA = 0;
 public:
