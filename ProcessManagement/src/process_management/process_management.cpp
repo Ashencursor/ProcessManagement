@@ -55,14 +55,13 @@ uintptr_t Process::getModuleAddress(std::string& dll_name)
 {
 	uintptr_t moduleBaseAddress = 0;
 	HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, this->ID);
-	utils::toLower(dll_name);
 	// For conversion
 
 	if (snapshot != INVALID_HANDLE_VALUE) {
 		MODULEENTRY32 moduleEntry;
 		moduleEntry.dwSize = sizeof(MODULEENTRY32);
-
 		if (Module32First(snapshot, &moduleEntry)) {
+			utils::toLower(dll_name);
 			do {
 				utils::toLower(moduleEntry.szModule);
 				if (utils::wideToNarrow(moduleEntry.szModule) == dll_name) {// wcscmp(moduleEntry.szModule, dll_name) or moduleEntry.szModule == dll_name

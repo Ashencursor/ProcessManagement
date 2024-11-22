@@ -18,17 +18,21 @@ void utils::toLower(std::string& str) {
 		return std::tolower(c);
 	});
 }
-
 void utils::toLower(std::wstring& str)
 {
 	std::transform(str.begin(), str.end(), str.begin(), [](wchar_t c) {
 		return std::tolower(c);
 	});
 }
-
 void utils::toLower(wchar_t* str)
 {
 	std::transform(str, str + std::wcslen(str), str, [](wchar_t c) {
 		return std::tolower(c);
-		});
+	});
+}
+void utils::toLower(char* str)
+{
+	std::transform(str, str + std::strlen(str), str, [](unsigned char c) {
+		return std::tolower(c);
+	});
 }

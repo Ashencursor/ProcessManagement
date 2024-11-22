@@ -10,4 +10,6 @@ namespace utils
 	void toLower(std::string& str);
 	void toLower(std::wstring& str);
 	void toLower(wchar_t* str);
+	void toLower(char* str);
+
 }
