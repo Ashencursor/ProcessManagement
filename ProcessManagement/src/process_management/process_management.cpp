@@ -4,7 +4,7 @@
 #include <vector>
 #include "../Header Files/utils.h"
 
-bool Process::initialize(const wchar_t* proc_name)
+bool Process::initialize(const std::string& proc_name)
 {
 	this->ID = getID(proc_name);
 	this->handle = getHandle(this->ID);
@@ -20,14 +20,14 @@ bool Process::initialize(const wchar_t* proc_name)
 	return true;
 }
 
-std::uint32_t Process::getID(const std::wstring str)
+std::uint32_t Process::getID(const std::string& str)
 {
 	PROCESSENTRY32 ProcessInfoPE;
 	ProcessInfoPE.dwSize = sizeof(PROCESSENTRY32);
 	HANDLE hSnapshot = CreateToolhelp32Snapshot(15, 0);
 	Process32First(hSnapshot, &ProcessInfoPE);
 	do {
-		if (ProcessInfoPE.szExeFile == str)
+		if (utils::wideToNarrow(ProcessInfoPE.szExeFile) == str)
 		{
 			CloseHandle(hSnapshot);
 			return ProcessInfoPE.th32ProcessID;
@@ -51,10 +51,12 @@ void* Process::getHandle(const std::uint32_t id)
 	return this->handle;
 }
 
-uintptr_t Process::getModuleAddress(const char* dll_name)
+uintptr_t Process::getModuleAddress(std::string& dll_name)
 {
 	uintptr_t moduleBaseAddress = 0;
 	HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, this->ID);
+	utils::toLower(dll_name);
+	// For conversion
 
 	if (snapshot != INVALID_HANDLE_VALUE) {
 		MODULEENTRY32 moduleEntry;
@@ -62,7 +64,8 @@ uintptr_t Process::getModuleAddress(const char* dll_name)
 
 		if (Module32First(snapshot, &moduleEntry)) {
 			do {
-				if (utils::toLower(utils::wideToNarrow(moduleEntry.szModule)) == utils::toLower(dll_name)) {// wcscmp(moduleEntry.szModule, dll_name) or moduleEntry.szModule == dll_name
+				utils::toLower(moduleEntry.szModule);
+				if (utils::wideToNarrow(moduleEntry.szModule) == dll_name) {// wcscmp(moduleEntry.szModule, dll_name) or moduleEntry.szModule == dll_name
 					return reinterpret_cast<uintptr_t>(moduleEntry.modBaseAddr);
 				}
 			} while (Module32Next(snapshot, &moduleEntry));
@@ -80,7 +83,7 @@ uintptr_t Process::getModuleAddress(const char* dll_name)
 	return moduleBaseAddress;
 }
 
-uintptr_t Process::getModuleFuncAddress(const char* dll_name, const char* function_name)
+uintptr_t Process::getModuleFuncAddress(std::string& dll_name, const std::string& function_name)
 {
 	// Get remote module address
 	uintptr_t remoteModuleAddress{ getModuleAddress(dll_name) };
@@ -89,16 +92,16 @@ uintptr_t Process::getModuleFuncAddress(const char* dll_name, const char* functi
 		return 0;
 	}
 	// Get the local module handle
-	HMODULE localModuleAddress{ GetModuleHandleA(dll_name) };
+	HMODULE localModuleAddress{ GetModuleHandleA(dll_name.data()) };
 	if (localModuleAddress == nullptr) {
-		localModuleAddress = LoadLibraryA(dll_name);
+		localModuleAddress = LoadLibraryA(dll_name.data());
 		if (localModuleAddress == nullptr) {
 			std::cerr << "[-] Failed to load library: " << dll_name << std::endl;
 			return 0;
 		}
 	}
 	// Get the address of the function in the local module
-	FARPROC  localModuleFunctionAddress{ GetProcAddress(localModuleAddress, function_name) };
+	FARPROC  localModuleFunctionAddress{ GetProcAddress(localModuleAddress, function_name.data()) };
 	if (localModuleFunctionAddress == nullptr) {
 		std::cerr << "[-] Failed to get function address: " << function_name << std::endl;
 		return 0;
@@ -113,14 +116,14 @@ uintptr_t Process::getModuleFuncAddress(const char* dll_name, const char* functi
 // This is kinda weird because loading a library into the target process in this function below uses create remote thread
 // and the remoteLoadLibraryA so it does what my manual mapper is avoiding(using loadLibrary). It doesnt totaly matter for 
 // the simple games I'm making cheats for now but it will when I get to ac. Just something to worry and think about.
-uintptr_t Process::LoadRemoteLibrary(const char* module_name)
+uintptr_t Process::LoadRemoteLibrary(const std::string& module_name)
 {
-	void* remoteMemory = VirtualAllocEx(handle, nullptr, strlen(module_name) + 1, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+	void* remoteMemory = VirtualAllocEx(handle, nullptr, strlen(module_name.data()) + 1, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
 	if (!remoteMemory) {
 		return 0;  // Allocation failed
 	}
 
-	if (!WriteProcessMemory(handle, remoteMemory, module_name, strlen(module_name) + 1, nullptr)) {
+	if (!WriteProcessMemory(handle, remoteMemory, module_name.data(), strlen(module_name.data()) + 1, nullptr)) {
 		VirtualFreeEx(handle, remoteMemory, 0, MEM_RELEASE);
 		return 0;  // Writing failed
 	}
