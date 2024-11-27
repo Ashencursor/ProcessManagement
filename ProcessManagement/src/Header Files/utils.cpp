@@ -1,6 +1,8 @@
 #include "utils.h"
 #include <string>
+#include <type_traits>
 #include <fstream>
+#include <cwctype>   
 #include <boost/nowide/convert.hpp>
 
 
@@ -13,26 +15,30 @@ std::wstring utils::narrowToWide(std::string_view narrow_str) {
 }
 
 
-void utils::toLower(std::string& str) {
-	std::transform(str.begin(), str.end(), str.begin(), [](unsigned char c) {
-		return std::tolower(c);
-	});
+// Could be std::ranges but whatever. StringType::value_type for the char type, should be to be excplicit in template::value_type
+template <typename StringType>
+StringType toLower(StringType str) {
+	std::transform(str.begin(), str.end(), str.begin(), [](auto c) {
+		if constexpr (std::is_same_v<typename StringType::value_type, char>) {
+			return std::tolower(c);
+		}
+		else if constexpr (std::is_same_v<typename StringType::value_type, wchar_t>) {
+			return std::towlower(c);
+		}
+		else {
+			std::cout << "[-] Unknown string type\n";
+		}
+			});
+	return str;
 }
-void utils::toLower(std::wstring& str)
+
+template <typename CharType>
+std::basic_string<CharType> toLower(const CharType* str)
 {
-	std::transform(str.begin(), str.end(), str.begin(), [](wchar_t c) {
-		return std::tolower(c);
-	});
+	return toLower(std::basic_string<CharType>(str));
 }
-void utils::toLower(wchar_t* str)
+template <typename CharType>
+std::basic_string<CharType> toLower(const std::basic_string_view<CharType> str)
 {
-	std::transform(str, str + std::wcslen(str), str, [](wchar_t c) {
-		return std::tolower(c);
-	});
-}
-void utils::toLower(char* str)
-{
-	std::transform(str, str + std::strlen(str), str, [](unsigned char c) {
-		return std::tolower(c);
-	});
+	return toLower(std::basic_string<CharType>(str));
 }
