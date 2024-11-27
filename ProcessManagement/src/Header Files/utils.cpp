@@ -1,9 +1,9 @@
 #include "utils.h"
 #include <string>
+#include <boost/nowide/convert.hpp>
 #include <type_traits>
 #include <fstream>
 #include <cwctype>   
-#include <boost/nowide/convert.hpp>
 
 
 std::string utils::wideToNarrow(std::wstring_view wide_str) {
@@ -13,7 +13,6 @@ std::string utils::wideToNarrow(std::wstring_view wide_str) {
 std::wstring utils::narrowToWide(std::string_view narrow_str) {
 	return boost::nowide::widen(narrow_str);
 }
-
 
 // Could be std::ranges but whatever. StringType::value_type for the char type, should be to be excplicit in template::value_type
 template <typename StringType>
@@ -28,7 +27,7 @@ StringType toLower(StringType str) {
 		else {
 			std::cout << "[-] Unknown string type\n";
 		}
-			});
+		});
 	return str;
 }
 
